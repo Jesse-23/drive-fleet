@@ -1,14 +1,15 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, Car, CalendarCheck, LogOut, ChevronLeft, Menu } from "lucide-react";
+import { LayoutDashboard, Car, CalendarCheck, LogOut, ChevronLeft, Menu, BarChart2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/admin/cars", icon: Car, label: "Manage Cars" },
-  { to: "/admin/bookings", icon: CalendarCheck, label: "Bookings" },
+  { to: "/admin",           icon: LayoutDashboard, label: "Dashboard",  end: true },
+  { to: "/admin/cars",      icon: Car,             label: "Manage Cars" },
+  { to: "/admin/bookings",  icon: CalendarCheck,   label: "Bookings" },
+  { to: "/admin/analytics", icon: BarChart2,       label: "Analytics" },
 ];
 
 export function AdminLayout() {

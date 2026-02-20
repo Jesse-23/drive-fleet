@@ -16,6 +16,7 @@ import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ManageCars from "./pages/admin/ManageCars";
 import ManageBookings from "./pages/admin/ManageBookings";
+import Analytics from "./pages/admin/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="cars" element={<ManageCars />} />
               <Route path="bookings" element={<ManageBookings />} />
+              <Route path="analytics" element={<Analytics />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

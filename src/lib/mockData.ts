@@ -179,26 +179,21 @@ export const SEED_CARS: Car[] = [
 ];
 
 export const SEED_BOOKINGS: Booking[] = [
-  {
-    id: "b1",
-    user_id: "u2",
-    car_id: "c1",
-    start_date: "2026-02-15",
-    end_date: "2026-02-18",
-    total_price: 267,
-    status: "approved",
-    created_at: "2026-02-10T00:00:00Z",
-  },
-  {
-    id: "b2",
-    user_id: "u2",
-    car_id: "c4",
-    start_date: "2026-01-05",
-    end_date: "2026-01-07",
-    total_price: 398,
-    status: "completed",
-    created_at: "2026-01-02T00:00:00Z",
-  },
+  { id: "b1",  user_id: "u2", car_id: "c1",  start_date: "2026-02-15", end_date: "2026-02-18", total_price: 267,  status: "approved",   created_at: "2026-02-10T00:00:00Z" },
+  { id: "b2",  user_id: "u2", car_id: "c4",  start_date: "2026-01-05", end_date: "2026-01-07", total_price: 398,  status: "completed",  created_at: "2026-01-02T00:00:00Z" },
+  { id: "b3",  user_id: "u2", car_id: "c2",  start_date: "2025-10-01", end_date: "2025-10-04", total_price: 330,  status: "completed",  created_at: "2025-09-28T00:00:00Z" },
+  { id: "b4",  user_id: "u2", car_id: "c5",  start_date: "2025-10-10", end_date: "2025-10-14", total_price: 600,  status: "completed",  created_at: "2025-10-05T00:00:00Z" },
+  { id: "b5",  user_id: "u2", car_id: "c3",  start_date: "2025-11-02", end_date: "2025-11-05", total_price: 285,  status: "completed",  created_at: "2025-10-30T00:00:00Z" },
+  { id: "b6",  user_id: "u2", car_id: "c9",  start_date: "2025-11-15", end_date: "2025-11-18", total_price: 360,  status: "completed",  created_at: "2025-11-12T00:00:00Z" },
+  { id: "b7",  user_id: "u2", car_id: "c12", start_date: "2025-11-20", end_date: "2025-11-23", total_price: 750,  status: "completed",  created_at: "2025-11-17T00:00:00Z" },
+  { id: "b8",  user_id: "u2", car_id: "c6",  start_date: "2025-12-01", end_date: "2025-12-03", total_price: 90,   status: "completed",  created_at: "2025-11-28T00:00:00Z" },
+  { id: "b9",  user_id: "u2", car_id: "c8",  start_date: "2025-12-10", end_date: "2025-12-13", total_price: 390,  status: "completed",  created_at: "2025-12-07T00:00:00Z" },
+  { id: "b10", user_id: "u2", car_id: "c11", start_date: "2025-12-20", end_date: "2025-12-23", total_price: 120,  status: "completed",  created_at: "2025-12-17T00:00:00Z" },
+  { id: "b11", user_id: "u2", car_id: "c10", start_date: "2026-01-08", end_date: "2026-01-11", total_price: 540,  status: "completed",  created_at: "2026-01-05T00:00:00Z" },
+  { id: "b12", user_id: "u2", car_id: "c7",  start_date: "2026-01-18", end_date: "2026-01-21", total_price: 315,  status: "completed",  created_at: "2026-01-15T00:00:00Z" },
+  { id: "b13", user_id: "u2", car_id: "c3",  start_date: "2026-02-01", end_date: "2026-02-03", total_price: 190,  status: "completed",  created_at: "2026-01-29T00:00:00Z" },
+  { id: "b14", user_id: "u2", car_id: "c6",  start_date: "2026-02-20", end_date: "2026-02-22", total_price: 90,   status: "pending",    created_at: "2026-02-18T00:00:00Z" },
+  { id: "b15", user_id: "u2", car_id: "c9",  start_date: "2026-03-01", end_date: "2026-03-05", total_price: 480,  status: "pending",    created_at: "2026-02-19T00:00:00Z" },
 ];
 
 export const SEED_REVIEWS: Review[] = [
