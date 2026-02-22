@@ -21,6 +21,7 @@ export interface Car {
   seats: number;
   fuel_type: string;
   available: boolean;
+  is_deleted?: boolean;
   created_at: string;
 }
 

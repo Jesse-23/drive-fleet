@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, RotateCcw, Archive } from "lucide-react";
+import { ToastAction } from "@/components/ui/toast";
 
 const emptyForm = {
   name: "", brand: "", category: "Sedan", transmission: "automatic" as Transmission,
@@ -21,10 +22,17 @@ export default function ManageCars() {
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<"active" | "deleted">("active");
   const { toast } = useToast();
 
-  const load = () => api.getAllCarsAdmin().then(setCars);
-  useEffect(() => { load(); }, []);
+  const load = () => {
+    if (view === "active") {
+      return api.getAllCarsAdmin().then(setCars);
+    } else {
+      return api.getDeletedCarsAdmin().then(setCars);
+    }
+  };
+  useEffect(() => { load(); }, [view]);
 
   const handleOpen = (car?: Car) => {
     if (car) {
@@ -64,7 +72,21 @@ export default function ManageCars() {
 
   const handleDelete = async (id: string) => {
     await api.deleteCar(id);
-    toast({ title: "Car deleted" });
+    toast({
+      title: "Car deleted",
+      description: "You can find it in the archive or undo now.",
+      action: (
+        <ToastAction altText="Undo" onClick={() => handleRestore(id)}>
+          Undo
+        </ToastAction>
+      ),
+    });
+    load();
+  };
+
+  const handleRestore = async (id: string) => {
+    await api.restoreCar(id);
+    toast({ title: "Car restored" });
     load();
   };
 
@@ -75,12 +97,35 @@ export default function ManageCars() {
           <h1 className="text-2xl font-bold">Manage Cars</h1>
           <p className="text-muted-foreground">{cars.length} vehicles in fleet</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="accent" onClick={() => handleOpen()}>
-              <Plus className="mr-1 h-4 w-4" /> Add Car
+        <div className="flex gap-2">
+          {view === "deleted" && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await api.restoreDefaultCars();
+                toast({ title: "Default cars restored" });
+                load();
+              }}
+            >
+              <RotateCcw className="mr-1 h-4 w-4" /> Restore Defaults
             </Button>
-          </DialogTrigger>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setView(view === "active" ? "deleted" : "active")}
+          >
+            {view === "active" ? (
+              <><Archive className="mr-1 h-4 w-4" /> View Archive</>
+            ) : (
+              <><RotateCcw className="mr-1 h-4 w-4" /> Back to Fleet</>
+            )}
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button variant="accent" onClick={() => handleOpen()}>
+                <Plus className="mr-1 h-4 w-4" /> Add Car
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{editId ? "Edit Car" : "Add New Car"}</DialogTitle>
@@ -126,6 +171,7 @@ export default function ManageCars() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       <div className="space-y-3">
         {cars.map((car) => (
@@ -139,11 +185,24 @@ export default function ManageCars() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => handleOpen(car)}><Pencil className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(car.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+              {view === "active" ? (
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => handleOpen(car)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(car.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </>
+              ) : (
+                <Button variant="ghost" size="icon" onClick={() => handleRestore(car.id)}>
+                  <RotateCcw className="h-4 w-4 text-primary" />
+                </Button>
+              )}
             </div>
           </div>
         ))}
+        {cars.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            {view === "active" ? "No cars in fleet." : "Archive is empty."}
+          </div>
+        )}
       </div>
     </div>
   );

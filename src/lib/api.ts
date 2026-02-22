@@ -61,7 +61,7 @@ function getCurrentUser(): User | null {
 }
 
 export const api = {
-  // ─── Auth ───
+  // Auth
   async register(data: { name: string; email: string; password: string }) {
     await delay();
     if (db.users.find((u) => u.email === data.email)) throw new Error("Email already exists");
@@ -97,10 +97,10 @@ export const api = {
 
   getCurrentUser,
 
-  // ─── Cars ───
+  // Cars
   async getCars(filters?: Partial<CarFiltersState>): Promise<Car[]> {
     await delay(100);
-    let cars = db.cars.filter((c) => c.available);
+    let cars = db.cars.filter((c) => c.available && !c.is_deleted);
     if (filters) {
       if (filters.category) cars = cars.filter((c) => c.category === filters.category);
       if (filters.transmission) cars = cars.filter((c) => c.transmission === filters.transmission);
@@ -123,7 +123,12 @@ export const api = {
 
   async getAllCarsAdmin(): Promise<Car[]> {
     await delay(100);
-    return [...db.cars];
+    return db.cars.filter((c) => !c.is_deleted);
+  },
+
+  async getDeletedCarsAdmin(): Promise<Car[]> {
+    await delay(100);
+    return db.cars.filter((c) => c.is_deleted);
   },
 
   async createCar(data: Omit<Car, "id" | "created_at">): Promise<Car> {
@@ -145,11 +150,42 @@ export const api = {
 
   async deleteCar(id: string): Promise<void> {
     await delay();
-    db.cars = db.cars.filter((c) => c.id !== id);
+    const idx = db.cars.findIndex((c) => c.id === id);
+    if (idx !== -1) {
+      db.cars[idx].is_deleted = true;
+      save();
+    }
+  },
+
+  async restoreCar(id: string): Promise<void> {
+    await delay();
+    const idx = db.cars.findIndex((c) => c.id === id);
+    if (idx !== -1) {
+      db.cars[idx].is_deleted = false;
+      save();
+    }
+  },
+
+  async restoreDefaultCars(): Promise<void> {
+    await delay();
+    const existingIds = new Set(db.cars.map((c) => c.id));
+    const seedIds = new Set(SEED_CARS.map((c) => c.id));
+    
+    // Add missing defaults
+    const missingCars = SEED_CARS.filter((c) => !existingIds.has(c.id));
+    db.cars.push(...missingCars.map(c => ({ ...c })));
+    
+    // Un-delete any default cars that were soft-deleted
+    db.cars.forEach((c) => {
+      if (seedIds.has(c.id)) {
+        c.is_deleted = false;
+      }
+    });
+    
     save();
   },
 
-  // ─── Bookings ───
+  // Bookings
   async createBooking(data: { car_id: string; start_date: string; end_date: string }): Promise<Booking> {
     await delay();
     const user = getCurrentUser();
@@ -217,7 +253,7 @@ export const api = {
     return db.bookings[idx];
   },
 
-  // ─── Admin Stats ───
+  // Admin Stats
   async getAdminStats(): Promise<AdminStats> {
     await delay(100);
     const bookings = db.bookings;
@@ -234,7 +270,7 @@ export const api = {
     return [...new Set(db.cars.map((c) => c.category))];
   },
 
-  // ─── Reviews ───
+  // Reviews
   async getReviews(carId: string): Promise<Review[]> {
     await delay(100);
     return db.reviews.filter((r) => r.car_id === carId);
