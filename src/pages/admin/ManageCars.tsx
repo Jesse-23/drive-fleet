@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, RotateCcw, Archive } from "lucide-react";
@@ -87,6 +88,12 @@ export default function ManageCars() {
   const handleRestore = async (id: string) => {
     await api.restoreCar(id);
     toast({ title: "Car restored" });
+    load();
+  };
+
+  const toggleAvailability = async (car: Car) => {
+    await api.updateCar(car.id, { available: !car.available });
+    toast({ title: car.available ? "Car hidden from listings" : "Car is now available" });
     load();
   };
 
@@ -184,11 +191,25 @@ export default function ManageCars() {
                 <span>${car.price_per_day}/day</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-3">
+              {view === "active" && (
+                <div className="flex flex-col items-center gap-1">
+                  <Switch
+                    checked={car.available}
+                    onCheckedChange={() => toggleAvailability(car)}
+                    aria-label="Toggle availability"
+                  />
+                  <span className="text-xs text-muted-foreground">{car.available ? "Listed" : "Hidden"}</span>
+                </div>
+              )}
               {view === "active" ? (
                 <>
-                  <Button variant="ghost" size="icon" onClick={() => handleOpen(car)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(car.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleOpen(car)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(car.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </>
               ) : (
                 <Button variant="ghost" size="icon" onClick={() => handleRestore(car.id)}>

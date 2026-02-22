@@ -266,6 +266,48 @@ export const api = {
     };
   },
 
+  async getRevenueByMonth(): Promise<{ month: string; revenue: number; bookings: number }[]> {
+    await delay(100);
+    const map: Record<string, { revenue: number; bookings: number }> = {};
+    db.bookings
+      .filter((b) => b.status !== "cancelled")
+      .forEach((b) => {
+        const key = b.created_at.slice(0, 7); // "YYYY-MM"
+        if (!map[key]) map[key] = { revenue: 0, bookings: 0 };
+        map[key].revenue += b.total_price;
+        map[key].bookings += 1;
+      });
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, data]) => ({
+        month: new Date(month + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" }),
+        ...data,
+      }));
+  },
+
+  async getBookingsByStatus(): Promise<{ status: string; count: number }[]> {
+    await delay(100);
+    const counts: Record<string, number> = { pending: 0, approved: 0, completed: 0, cancelled: 0 };
+    db.bookings.forEach((b) => { counts[b.status] = (counts[b.status] || 0) + 1; });
+    return Object.entries(counts).map(([status, count]) => ({ status, count }));
+  },
+
+  async getTopCars(): Promise<{ name: string; bookings: number; revenue: number }[]> {
+    await delay(100);
+    const map: Record<string, { name: string; bookings: number; revenue: number }> = {};
+    db.bookings
+      .filter((b) => b.status !== "cancelled")
+      .forEach((b) => {
+        const car = db.cars.find((c) => c.id === b.car_id);
+        if (!car) return;
+        const key = b.car_id;
+        if (!map[key]) map[key] = { name: `${car.brand} ${car.name}`, bookings: 0, revenue: 0 };
+        map[key].bookings += 1;
+        map[key].revenue += b.total_price;
+      });
+    return Object.values(map).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  },
+
   getCategories(): string[] {
     return [...new Set(db.cars.map((c) => c.category))];
   },
