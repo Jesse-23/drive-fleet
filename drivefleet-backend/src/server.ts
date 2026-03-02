@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { pool } from "./config/db";
 import carRoutes from "./routes/car.routes";
+import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
 
@@ -14,14 +15,19 @@ pool.connect()
   .then(() => console.log("PostgreSQL Connected ✅"))
   .catch((err) => console.error("DB Connection Error:", err));
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3030",
+  credentials: true,
+}))
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("DriveFleet MVP Backend Running 🚗");
+  res.send("DriveFleet Backend Running 🚗");
 });
 
 app.use("/api/cars", carRoutes);
+
+app.use("/api/auth", authRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

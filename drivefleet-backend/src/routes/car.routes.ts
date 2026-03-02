@@ -1,102 +1,142 @@
 import { Router } from "express";
 import { pool } from "../config/db";
+import { requireAuth, requireAdmin } from "../middleware/auth.middleware";
 
 const router = Router();
 
-// CREATE CAR
-router.post("/", async (req, res) => {
-  const { brand, model, year, price_per_day } = req.body;
-
-  try {
-    const newCar = await pool.query(
-      "INSERT INTO cars (brand, model, year, price_per_day) VALUES ($1, $2, $3, $4) RETURNING *",
-      [brand, model, year, price_per_day]
-    );
-
-    res.status(201).json(newCar.rows[0]);
-  } catch (error) {
-    res.status(500).json({ message: "Error creating car" });
-  }
-});
-
-// GET ALL CARS
 router.get("/", async (req, res) => {
   try {
-    const cars = await pool.query("SELECT * FROM cars ORDER BY id DESC");
+    const cars = await pool.query(
+      "SELECT * FROM cars WHERE deleted_at IS NULL ORDER BY id DESC"
+    );
     res.json(cars.rows);
   } catch (error) {
+    console.error("FETCH CARS ERROR:", error);
     res.status(500).json({ message: "Error fetching cars" });
   }
 });
 
-export default router;
-
-// UPDATE CARS
-router.post("/", async (req, res) => {
+router.get("/deleted", async (req, res) => {
   try {
-    const { brand, model, year, price_per_day } = req.body;
-
-    const newCar = await pool.query(
-      `INSERT INTO cars (brand, model, year, price_per_day)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [brand, model, year, price_per_day]
+    const cars = await pool.query(
+      "SELECT * FROM cars WHERE deleted_at IS NOT NULL ORDER BY id DESC"
     );
-
-    res.status(201).json(newCar.rows[0]);
+    res.json(cars.rows);
   } catch (error) {
-    console.error("CREATE CAR ERROR:", error);
-    res.status(500).json({ message: "Error creating car" });
+    console.error("FETCH DELETED CARS ERROR:", error);
+    res.status(500).json({ message: "Error fetching deleted cars" });
   }
 });
 
-
-// UPDATE CAR
-router.put("/:id", async (req, res) => {
+router.post("/", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { brand, model, year, price_per_day, available } = req.body;
+    const {
+      name,
+      brand,
+      category = "Sedan",
+      transmission = "automatic",
+      price_per_day,
+      image_url = "",
+      seats = 5,
+      fuel_type = "Gasoline",
+      available = true,
+    } = req.body;
 
-    const updatedCar = await pool.query(
-      `UPDATE cars
-       SET brand = $1,
-           model = $2,
-           year = $3,
-           price_per_day = $4,
-           available = $5
-       WHERE id = $6
-       RETURNING *`,
-      [brand, model, year, price_per_day, available, id]
+    const result = await pool.query(
+      `INSERT INTO cars
+      (name, brand, category, transmission, price_per_day, image_url, seats, fuel_type, available)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *`,
+      [name, brand, category, transmission, price_per_day, image_url, seats, fuel_type, available]
     );
 
-    if (updatedCar.rows.length === 0) {
-      return res.status(404).json({ message: "Car not found" });
-    }
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error("CREATE CAR ERROR:", error);
+    res.status(500).json({ message: error.message, detail: error.detail });
+  }
+});
 
-    res.json(updatedCar.rows[0]);
+router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const current = await pool.query("SELECT * FROM cars WHERE id = $1", [id]);
+    if (current.rows.length === 0)
+      return res.status(404).json({ message: "Car not found" });
+
+    const payload = { ...current.rows[0], ...req.body };
+
+    const result = await pool.query(
+      `UPDATE cars SET
+        name=$1,
+        brand=$2,
+        category=$3,
+        transmission=$4,
+        price_per_day=$5,
+        image_url=$6,
+        seats=$7,
+        fuel_type=$8,
+        available=$9
+      WHERE id=$10
+      RETURNING *`,
+      [
+        payload.name,
+        payload.brand,
+        payload.category,
+        payload.transmission,
+        payload.price_per_day,
+        payload.image_url,
+        payload.seats,
+        payload.fuel_type,
+        payload.available,
+        id,
+      ]
+    );
+
+    res.json(result.rows[0]);
   } catch (error) {
     console.error("UPDATE CAR ERROR:", error);
     res.status(500).json({ message: "Error updating car" });
   }
 });
 
-//DELETE CAR
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedCar = await pool.query(
-      "DELETE FROM cars WHERE id = $1 RETURNING *",
+    const result = await pool.query(
+      "UPDATE cars SET deleted_at = NOW() WHERE id = $1 RETURNING *",
       [id]
     );
 
-    if (deletedCar.rows.length === 0) {
+    if (result.rows.length === 0)
       return res.status(404).json({ message: "Car not found" });
-    }
 
-    res.json({ message: "Car deleted successfully", car: deletedCar.rows[0] });
+    res.json({ message: "Car archived", car: result.rows[0] });
   } catch (error) {
-    console.error("DELETE CAR ERROR:", error);
-    res.status(500).json({ message: "Error deleting car" });
+    console.error("ARCHIVE CAR ERROR:", error);
+    res.status(500).json({ message: "Error archiving car" });
   }
 });
+
+router.post("/:id/restore", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      "UPDATE cars SET deleted_at = NULL WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rows.length === 0)
+      return res.status(404).json({ message: "Car not found" });
+
+    res.json({ message: "Car restored", car: result.rows[0] });
+  } catch (error) {
+    console.error("RESTORE CAR ERROR:", error);
+    res.status(500).json({ message: "Error restoring car" });
+  }
+});
+
+export default router;
