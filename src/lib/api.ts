@@ -128,36 +128,20 @@ export const api = {
 
   // ========= CARS (BROWSE - still MOCK for now) =========
   async getCars(filters?: Partial<CarFiltersState>): Promise<Car[]> {
-    await delay(100);
-    let cars = db.cars.filter((c) => c.available && !c.is_deleted);
+  const params = new URLSearchParams();
 
-    if (filters) {
-      if (filters.category)
-        cars = cars.filter((c) => c.category === filters.category);
-      if (filters.transmission)
-        cars = cars.filter((c) => c.transmission === filters.transmission);
-      if (filters.minPrice)
-        cars = cars.filter((c) => c.price_per_day >= filters.minPrice!);
-      if (filters.maxPrice)
-        cars = cars.filter((c) => c.price_per_day <= filters.maxPrice!);
-      if (filters.search) {
-        const s = filters.search.toLowerCase();
-        cars = cars.filter(
-          (c) =>
-            c.name.toLowerCase().includes(s) ||
-            c.brand.toLowerCase().includes(s),
-        );
-      }
-    }
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.transmission) params.set("transmission", filters.transmission);
+  if (filters?.minPrice) params.set("minPrice", String(filters.minPrice));
+  if (filters?.maxPrice) params.set("maxPrice", String(filters.maxPrice));
+  if (filters?.search) params.set("search", filters.search);
 
-    return cars;
-  },
+  const query = params.toString();
+  return request(`/cars/public${query ? `?${query}` : ""}`);
+},
 
-  async getCar(id: string): Promise<Car> {
-    await delay(100);
-    const car = db.cars.find((c) => c.id === id);
-    if (!car) throw new Error("Car not found");
-    return car;
+  async getCar(id: number): Promise<Car> {
+    return request(`/cars/${id}`);
   },
 
   // ========= CARS (ADMIN) — REAL BACKEND =========
@@ -210,84 +194,59 @@ export const api = {
     save();
   },
 
-  // ========= BOOKINGS (MOCK) =========
+  // ========= BOOKINGS (BACKEND) =========
+
   async createBooking(data: {
-    car_id: string;
+    car_id: number;
     start_date: string;
     end_date: string;
   }): Promise<Booking> {
-    await delay();
-    const user = api.getCurrentUser();
-    if (!user) throw new Error("Not authenticated");
-
-    const car = db.cars.find((c) => c.id === data.car_id);
-    if (!car) throw new Error("Car not found");
-
-    const hasConflict = db.bookings.some(
-      (b) =>
-        b.car_id === data.car_id &&
-        b.status !== "cancelled" &&
-        b.start_date <= data.end_date &&
-        b.end_date >= data.start_date,
-    );
-    if (hasConflict) throw new Error("Car is not available for selected dates");
-
-    const days = Math.ceil(
-      (new Date(data.end_date).getTime() -
-        new Date(data.start_date).getTime()) /
-        (1000 * 60 * 60 * 24),
-    );
-
-    const booking: Booking = {
-      id: genId(),
-      user_id: user.id,
-      car_id: data.car_id,
-      start_date: data.start_date,
-      end_date: data.end_date,
-      total_price: days * car.price_per_day,
-      status: "pending",
-      created_at: new Date().toISOString(),
-    };
-
-    db.bookings.push(booking);
-    save();
-    return booking;
+    return request("/bookings", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   async getUserBookings(): Promise<Booking[]> {
-    await delay(100);
-    const user = api.getCurrentUser();
-    if (!user) return [];
+  const rows = await request("/bookings/me");
 
-    return db.bookings
-      .filter((b) => b.user_id === user.id)
-      .map((b) => ({ ...b, car: db.cars.find((c) => c.id === b.car_id) }));
-  },
+  return rows.map((b: any) => ({
+    ...b,
+    car: {
+      id: b.car_id,
+      name: b.car_name,
+      brand: b.car_brand,
+      image_url: b.image_url,
+    },
+  }));
+},
 
   async getAllBookings(): Promise<Booking[]> {
-    await delay(100);
-    return db.bookings.map((b) => ({
-      ...b,
-      car: db.cars.find((c) => c.id === b.car_id),
-      user: (() => {
-        const u = db.users.find((u) => u.id === b.user_id);
-        if (!u) return undefined;
-        const { password: _pw, ...safe } = u;
-        return safe;
-      })(),
-    }));
-  },
+  const rows = await request("/bookings");
+
+  return rows.map((b: any) => ({
+    ...b,
+    car: {
+      id: b.car_id,
+      name: b.car_name,
+      brand: b.car_brand,
+    },
+    user: {
+      id: b.user_id,
+      name: b.user_name,
+      email: b.user_email,
+    },
+  }));
+},
 
   async updateBookingStatus(
-    id: string,
+    id: number,
     status: BookingStatus,
   ): Promise<Booking> {
-    await delay();
-    const idx = db.bookings.findIndex((b) => b.id === id);
-    if (idx === -1) throw new Error("Booking not found");
-    db.bookings[idx].status = status;
-    save();
-    return db.bookings[idx];
+    return request(`/bookings/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
   },
 
   // ========= ADMIN STATS (MOCK) =========
@@ -381,13 +340,13 @@ export const api = {
   },
 
   // ========= REVIEWS (MOCK) =========
-  async getReviews(carId: string): Promise<Review[]> {
+  async getReviews(carId: number): Promise<Review[]> {
     await delay(100);
     return db.reviews.filter((r) => r.car_id === carId);
   },
 
   async createReview(data: {
-    car_id: string;
+    car_id: number;
     rating: number;
     comment: string;
   }): Promise<Review> {
@@ -396,7 +355,7 @@ export const api = {
     if (!user) throw new Error("Not authenticated");
 
     const review: Review = {
-      id: genId(),
+      id: Date.now()  ,
       user_id: user.id,
       car_id: data.car_id,
       rating: data.rating,

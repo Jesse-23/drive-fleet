@@ -29,8 +29,9 @@ export default function CarDetails() {
 
   useEffect(() => {
     if (id) {
-      api.getCar(id).then(setCar).catch(() => navigate("/cars"));
-      api.getReviews(id).then(setReviews);
+      const carId = Number(id);
+      api.getCar(carId).then(setCar).catch(() => navigate("/cars"));
+      api.getReviews(carId).then(setReviews);
     }
   }, [id]);
 
@@ -47,7 +48,7 @@ export default function CarDetails() {
     if (endDate <= startDate) { toast({ title: "End date must be after start date", variant: "destructive" }); return; }
     setBooking(true);
     try {
-      await api.createBooking({ car_id: car!.id, start_date: startDate, end_date: endDate });
+      await api.createBooking({ car_id: Number(car.id), start_date: startDate, end_date: endDate });
       toast({ title: "Booking confirmed!", description: "Your booking is pending approval." });
       navigate("/dashboard");
     } catch (err: any) {
@@ -62,7 +63,7 @@ export default function CarDetails() {
     if (!reviewComment.trim()) { toast({ title: "Please write a comment", variant: "destructive" }); return; }
     setSubmittingReview(true);
     try {
-      const review = await api.createReview({ car_id: car!.id, rating: reviewRating, comment: reviewComment });
+      const review = await api.createReview({ car_id: Number(car!.id), rating: reviewRating, comment: reviewComment });
       setReviews((prev) => [review, ...prev]);
       setReviewComment("");
       setReviewRating(5);

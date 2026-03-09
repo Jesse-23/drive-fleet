@@ -4,19 +4,21 @@ import { requireAuth, requireAdmin } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/", async (req, res) => {
+// PUBLIC CARS (for Browse Cars page)
+router.get("/public", async (_req, res) => {
   try {
-    const cars = await pool.query(
-      "SELECT * FROM cars WHERE deleted_at IS NULL ORDER BY id DESC"
+    const result = await pool.query(
+      "SELECT * FROM cars WHERE deleted_at IS NULL AND available = true ORDER BY id DESC"
     );
-    res.json(cars.rows);
+    res.json(result.rows);
   } catch (error) {
-    console.error("FETCH CARS ERROR:", error);
-    res.status(500).json({ message: "Error fetching cars" });
+    console.error("GET PUBLIC CARS ERROR:", error);
+    res.status(500).json({ message: "Error fetching public cars" });
   }
 });
 
-router.get("/deleted", async (req, res) => {
+// DELETED CARS (archive)
+router.get("/deleted", async (_req, res) => {
   try {
     const cars = await pool.query(
       "SELECT * FROM cars WHERE deleted_at IS NOT NULL ORDER BY id DESC"
@@ -28,6 +30,45 @@ router.get("/deleted", async (req, res) => {
   }
 });
 
+// SINGLE CAR (for CarDetails page)
+router.get("/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ message: "Invalid car id" });
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM cars WHERE id = $1 AND deleted_at IS NULL",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Car not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("GET CAR ERROR:", error);
+    res.status(500).json({ message: "Error fetching car" });
+  }
+});
+
+// ALL ACTIVE CARS (admin list)
+router.get("/", async (_req, res) => {
+  try {
+    const cars = await pool.query(
+      "SELECT * FROM cars WHERE deleted_at IS NULL ORDER BY id DESC"
+    );
+    res.json(cars.rows);
+  } catch (error) {
+    console.error("FETCH CARS ERROR:", error);
+    res.status(500).json({ message: "Error fetching cars" });
+  }
+});
+
+// CREATE CAR
 router.post("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     const {
@@ -47,7 +88,17 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       (name, brand, category, transmission, price_per_day, image_url, seats, fuel_type, available)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       RETURNING *`,
-      [name, brand, category, transmission, price_per_day, image_url, seats, fuel_type, available]
+      [
+        name,
+        brand,
+        category,
+        transmission,
+        price_per_day,
+        image_url,
+        seats,
+        fuel_type,
+        available,
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -57,13 +108,15 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// UPDATE CAR
 router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
     const current = await pool.query("SELECT * FROM cars WHERE id = $1", [id]);
-    if (current.rows.length === 0)
+    if (current.rows.length === 0) {
       return res.status(404).json({ message: "Car not found" });
+    }
 
     const payload = { ...current.rows[0], ...req.body };
 
@@ -101,6 +154,7 @@ router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// ARCHIVE CAR
 router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -110,8 +164,9 @@ router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
       [id]
     );
 
-    if (result.rows.length === 0)
+    if (result.rows.length === 0) {
       return res.status(404).json({ message: "Car not found" });
+    }
 
     res.json({ message: "Car archived", car: result.rows[0] });
   } catch (error) {
@@ -120,6 +175,7 @@ router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// RESTORE CAR
 router.post("/:id/restore", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -129,8 +185,9 @@ router.post("/:id/restore", requireAuth, requireAdmin, async (req, res) => {
       [id]
     );
 
-    if (result.rows.length === 0)
+    if (result.rows.length === 0) {
       return res.status(404).json({ message: "Car not found" });
+    }
 
     res.json({ message: "Car restored", car: result.rows[0] });
   } catch (error) {

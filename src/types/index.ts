@@ -1,9 +1,9 @@
-export type UserRole = 'admin' | 'user';
-export type BookingStatus = 'pending' | 'approved' | 'completed' | 'cancelled';
-export type Transmission = 'automatic' | 'manual';
+export type UserRole = "admin" | "user";
+export type BookingStatus = "pending" | "approved" | "completed" | "cancelled";
+export type Transmission = "automatic" | "manual";
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: UserRole;
@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface Car {
-  id: string;
+  id: number;
   name: string;
   brand: string;
   category: string;
@@ -26,9 +26,9 @@ export interface Car {
 }
 
 export interface Booking {
-  id: string;
-  user_id: string;
-  car_id: string;
+  id: number;
+  user_id: number;
+  car_id: number;
   start_date: string;
   end_date: string;
   total_price: number;
@@ -55,9 +55,9 @@ export interface AdminStats {
 }
 
 export interface Review {
-  id: string;
-  user_id: string;
-  car_id: string;
+  id: number;
+  user_id: number;
+  car_id: number;
   rating: number;
   comment: string;
   user_name: string;
