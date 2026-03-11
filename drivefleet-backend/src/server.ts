@@ -5,6 +5,7 @@ import { pool } from "./config/db";
 import carRoutes from "./routes/car.routes";
 import authRoutes from "./routes/auth.routes";
 import bookingRoutes from "./routes/booking.routes";
+import statsRoutes from "./routes/stats.routes";
 
 dotenv.config();
 
@@ -31,6 +32,8 @@ app.use("/api/cars", carRoutes);
 app.use("/api/auth", authRoutes);
 
 app.use("/api/bookings", bookingRoutes);
+
+app.use("/api/stats", statsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

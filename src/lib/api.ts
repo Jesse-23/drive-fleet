@@ -128,17 +128,17 @@ export const api = {
 
   // ========= CARS (BROWSE - still MOCK for now) =========
   async getCars(filters?: Partial<CarFiltersState>): Promise<Car[]> {
-  const params = new URLSearchParams();
+    const params = new URLSearchParams();
 
-  if (filters?.category) params.set("category", filters.category);
-  if (filters?.transmission) params.set("transmission", filters.transmission);
-  if (filters?.minPrice) params.set("minPrice", String(filters.minPrice));
-  if (filters?.maxPrice) params.set("maxPrice", String(filters.maxPrice));
-  if (filters?.search) params.set("search", filters.search);
+    if (filters?.category) params.set("category", filters.category);
+    if (filters?.transmission) params.set("transmission", filters.transmission);
+    if (filters?.minPrice) params.set("minPrice", String(filters.minPrice));
+    if (filters?.maxPrice) params.set("maxPrice", String(filters.maxPrice));
+    if (filters?.search) params.set("search", filters.search);
 
-  const query = params.toString();
-  return request(`/cars/public${query ? `?${query}` : ""}`);
-},
+    const query = params.toString();
+    return request(`/cars/public${query ? `?${query}` : ""}`);
+  },
 
   async getCar(id: number): Promise<Car> {
     return request(`/cars/${id}`);
@@ -208,36 +208,36 @@ export const api = {
   },
 
   async getUserBookings(): Promise<Booking[]> {
-  const rows = await request("/bookings/me");
+    const rows = await request("/bookings/me");
 
-  return rows.map((b: any) => ({
-    ...b,
-    car: {
-      id: b.car_id,
-      name: b.car_name,
-      brand: b.car_brand,
-      image_url: b.image_url,
-    },
-  }));
-},
+    return rows.map((b: any) => ({
+      ...b,
+      car: {
+        id: b.car_id,
+        name: b.car_name,
+        brand: b.car_brand,
+        image_url: b.image_url,
+      },
+    }));
+  },
 
   async getAllBookings(): Promise<Booking[]> {
-  const rows = await request("/bookings");
+    const rows = await request("/bookings");
 
-  return rows.map((b: any) => ({
-    ...b,
-    car: {
-      id: b.car_id,
-      name: b.car_name,
-      brand: b.car_brand,
-    },
-    user: {
-      id: b.user_id,
-      name: b.user_name,
-      email: b.user_email,
-    },
-  }));
-},
+    return rows.map((b: any) => ({
+      ...b,
+      car: {
+        id: b.car_id,
+        name: b.car_name,
+        brand: b.car_brand,
+      },
+      user: {
+        id: b.user_id,
+        name: b.user_name,
+        email: b.user_email,
+      },
+    }));
+  },
 
   async updateBookingStatus(
     id: number,
@@ -251,17 +251,7 @@ export const api = {
 
   // ========= ADMIN STATS (MOCK) =========
   async getAdminStats(): Promise<AdminStats> {
-    await delay(100);
-    const bookings = db.bookings;
-    return {
-      totalCars: db.cars.length,
-      totalBookings: bookings.length,
-      totalRevenue: bookings
-        .filter((b) => b.status !== "cancelled")
-        .reduce((s, b) => s + b.total_price, 0),
-      activeBookings: bookings.filter((b) => b.status === "approved").length,
-      pendingBookings: bookings.filter((b) => b.status === "pending").length,
-    };
+    return request("/stats");
   },
 
   async getRevenueByMonth(): Promise<
@@ -355,7 +345,7 @@ export const api = {
     if (!user) throw new Error("Not authenticated");
 
     const review: Review = {
-      id: Date.now()  ,
+      id: Date.now(),
       user_id: user.id,
       car_id: data.car_id,
       rating: data.rating,

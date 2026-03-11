@@ -59,6 +59,63 @@ router.post("/", requireAuth, async (req: any, res) => {
   }
 });
 
+router.post("/", requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.user.id;
+    const { car_id, start_date, end_date } = req.body;
+
+    if (!car_id || !start_date || !end_date) {
+      return res.status(400).json({ message: "car_id, start_date and end_date are required" });
+    }
+
+    const carResult = await pool.query(
+      "SELECT id, price_per_day FROM cars WHERE id = $1 AND deleted_at IS NULL",
+      [car_id]
+    );
+
+    if (carResult.rows.length === 0) {
+      return res.status(404).json({ message: "Car not found" });
+    }
+
+    // prevent overlapping bookings
+    const conflictResult = await pool.query(
+      `SELECT id FROM bookings
+       WHERE car_id = $1
+         AND status IN ('pending', 'approved')
+         AND start_date <= $3
+         AND end_date >= $2`,
+      [car_id, start_date, end_date]
+    );
+
+    if (conflictResult.rows.length > 0) {
+      return res.status(400).json({
+        message: "Car is not available for the selected dates",
+      });
+    }
+
+    const pricePerDay = Number(carResult.rows[0].price_per_day);
+
+    const start = new Date(start_date);
+    const end = new Date(end_date);
+    const diffTime = end.getTime() - start.getTime();
+    const days = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+    const totalPrice = days * pricePerDay;
+
+    const result = await pool.query(
+      `INSERT INTO bookings (user_id, car_id, start_date, end_date, total_price)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [userId, car_id, start_date, end_date, totalPrice]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("CREATE BOOKING ERROR:", error);
+    res.status(500).json({ message: "Error creating booking" });
+  }
+});
+
 // GET MY BOOKINGS
 router.get("/me", requireAuth, async (req: any, res) => {
   try {
