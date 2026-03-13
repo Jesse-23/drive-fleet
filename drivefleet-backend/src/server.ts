@@ -10,7 +10,7 @@ import statsRoutes from "./routes/stats.routes";
 dotenv.config();
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // TEST DATABASE CONNECTION
 pool.connect()
@@ -18,7 +18,7 @@ pool.connect()
   .catch((err) => console.error("DB Connection Error:", err));
 
 app.use(cors({
-  origin: "http://localhost:3030",
+  origin: "http://localhost:5173",
   credentials: true,
 }))
 app.use(express.json());
