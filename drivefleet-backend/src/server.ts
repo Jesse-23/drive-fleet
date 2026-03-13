@@ -18,7 +18,7 @@ pool.connect()
   .catch((err) => console.error("DB Connection Error:", err));
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "https://drive-fleet.pxxl.click/"],
   credentials: true,
 }))
 app.use(express.json());
