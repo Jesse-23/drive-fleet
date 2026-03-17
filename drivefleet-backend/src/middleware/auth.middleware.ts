@@ -1,15 +1,16 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
-export interface AuthRequest extends Request {
+type AuthRequest = Request & {
   user?: { id: number; role: string };
-}
+};
 
 export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
+  const header = req.headers?.authorization;
+
+  if (!header || !header.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Missing token" });
   }
 
