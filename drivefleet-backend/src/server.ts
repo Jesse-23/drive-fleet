@@ -10,31 +10,29 @@ import statsRoutes from "./routes/stats.routes";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-// TEST DATABASE CONNECTION
-pool.connect()
-  .then(() => console.log("PostgreSQL Connected ✅"))
-  .catch((err) => console.error("DB Connection Error:", err));
+const PORT = Number(process.env.PORT) || 5000;
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://drive-fleet.pxxl.click/"],
+  origin: ["http://localhost:5173", "https://drive-fleet.pxxl.click"],
   credentials: true,
-}))
+}));
+
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("DriveFleet Backend Running 🚗");
+app.get("/", (_req, res) => {
+  res.status(200).send("DriveFleet Backend Running 🚗");
 });
 
 app.use("/api/cars", carRoutes);
-
 app.use("/api/auth", authRoutes);
-
 app.use("/api/bookings", bookingRoutes);
-
 app.use("/api/stats", statsRoutes);
 
-app.listen(PORT, () => {
+// Test DB connection
+pool.query("SELECT 1")
+  .then(() => console.log("PostgreSQL Connected ✅"))
+  .catch((err) => console.error("DB Connection Error:", err));
+
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
