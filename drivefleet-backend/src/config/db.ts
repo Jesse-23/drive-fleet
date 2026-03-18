@@ -3,6 +3,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const useSSL = process.env.DB_SSL === "true";
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: useSSL ? { rejectUnauthorized: false } : false,
 });
