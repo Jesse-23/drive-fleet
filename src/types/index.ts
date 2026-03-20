@@ -3,7 +3,7 @@ export type BookingStatus = "pending" | "approved" | "completed" | "cancelled";
 export type Transmission = "automatic" | "manual";
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: UserRole;
@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface Car {
-  id: number;
+  id: string;
   name: string;
   brand: string;
   category: string;
@@ -22,20 +22,21 @@ export interface Car {
   fuel_type: string;
   available: boolean;
   is_deleted?: boolean;
+  deleted_at?: string | null;
   created_at: string;
 }
 
 export interface Booking {
-  id: number;
-  user_id: number;
-  car_id: number;
+  id: string;
+  user_id: string;
+  car_id: string;
   start_date: string;
   end_date: string;
   total_price: number;
   status: BookingStatus;
   created_at: string;
-  car?: Car;
-  user?: User;
+  car?: Partial<Car>;
+  user?: Partial<User>;
 }
 
 export interface CarFiltersState {
@@ -55,9 +56,9 @@ export interface AdminStats {
 }
 
 export interface Review {
-  id: number;
-  user_id: number;
-  car_id: number;
+  id: string;
+  user_id: string;
+  car_id: string;
   rating: number;
   comment: string;
   user_name: string;

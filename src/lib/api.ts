@@ -88,7 +88,6 @@ function save() {
  *  API
  *  ====================== */
 export const api = {
-  // ========= AUTH (REAL BACKEND) =========
   getCurrentUser(): User | null {
     const token = getToken();
     if (!token) return null;
@@ -96,7 +95,7 @@ export const api = {
     const decoded = decodeJwt(token);
     if (!decoded) return null;
 
-    return { id: String(decoded.id), role: decoded.role } as any;
+    return { id: String(decoded.id), role: decoded.role } as User;
   },
 
   async register(data: { name: string; email: string; password: string }) {
@@ -123,7 +122,6 @@ export const api = {
     localStorage.removeItem("carrental_token");
   },
 
-  // ========= CARS =========
   async getCars(filters?: Partial<CarFiltersState>): Promise<Car[]> {
     const params = new URLSearchParams();
 
@@ -137,7 +135,7 @@ export const api = {
     return request(`/api/cars/public${query ? `?${query}` : ""}`);
   },
 
-  async getCar(id: number): Promise<Car> {
+  async getCar(id: string): Promise<Car> {
     return request(`/api/cars/${id}`);
   },
 
@@ -190,9 +188,8 @@ export const api = {
     save();
   },
 
-  // ========= BOOKINGS =========
   async createBooking(data: {
-    car_id: number;
+    car_id: string;
     start_date: string;
     end_date: string;
   }): Promise<Booking> {
@@ -235,7 +232,7 @@ export const api = {
   },
 
   async updateBookingStatus(
-    id: number,
+    id: string,
     status: BookingStatus,
   ): Promise<Booking> {
     return request(`/api/bookings/${id}/status`, {
@@ -244,7 +241,6 @@ export const api = {
     });
   },
 
-  // ========= ADMIN STATS =========
   async getAdminStats(): Promise<AdminStats> {
     return request("/api/stats");
   },
@@ -325,14 +321,13 @@ export const api = {
     return [...new Set(db.cars.map((c) => c.category))];
   },
 
-  // ========= REVIEWS (MOCK) =========
-  async getReviews(carId: number): Promise<Review[]> {
+  async getReviews(carId: string): Promise<Review[]> {
     await delay(100);
     return db.reviews.filter((r) => r.car_id === carId);
   },
 
   async createReview(data: {
-    car_id: number;
+    car_id: string;
     rating: number;
     comment: string;
   }): Promise<Review> {
@@ -341,7 +336,7 @@ export const api = {
     if (!user) throw new Error("Not authenticated");
 
     const review: Review = {
-      id: Date.now(),
+      id: String(Date.now()),
       user_id: user.id,
       car_id: data.car_id,
       rating: data.rating,
