@@ -9,7 +9,7 @@ import type {
 } from "@/types";
 import { SEED_USERS, SEED_CARS, SEED_BOOKINGS, SEED_REVIEWS } from "./mockData";
 
-const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = "https://drive-fleet.vercel.app";
 
 /** ======================
  *  JWT + REQUEST HELPER
@@ -54,7 +54,6 @@ async function request(path: string, options: RequestInit = {}) {
  *  MOCK DB (KEEP FOR MVP)
  *  ====================== */
 const delay = (ms = 200) => new Promise((r) => setTimeout(r, ms));
-const genId = () => Math.random().toString(36).slice(2, 10);
 
 interface StoredUser extends User {
   password: string;
@@ -97,36 +96,34 @@ export const api = {
     const decoded = decodeJwt(token);
     if (!decoded) return null;
 
-    // Minimal user object for MVP
-    // (your backend returns full user on login/register anyway)
     return { id: String(decoded.id), role: decoded.role } as any;
   },
 
   async register(data: { name: string; email: string; password: string }) {
-    const result = await request("/auth/register", {
+    const result = await request("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     });
 
     localStorage.setItem("carrental_token", result.token);
-    return result; // { user, token }
+    return result;
   },
 
   async login(data: { email: string; password: string }) {
-    const result = await request("/auth/login", {
+    const result = await request("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     });
 
     localStorage.setItem("carrental_token", result.token);
-    return result; // { user, token }
+    return result;
   },
 
   logout() {
     localStorage.removeItem("carrental_token");
   },
 
-  // ========= CARS (BROWSE - still MOCK for now) =========
+  // ========= CARS =========
   async getCars(filters?: Partial<CarFiltersState>): Promise<Car[]> {
     const params = new URLSearchParams();
 
@@ -137,44 +134,43 @@ export const api = {
     if (filters?.search) params.set("search", filters.search);
 
     const query = params.toString();
-    return request(`/cars/public${query ? `?${query}` : ""}`);
+    return request(`/api/cars/public${query ? `?${query}` : ""}`);
   },
 
   async getCar(id: number): Promise<Car> {
-    return request(`/cars/${id}`);
+    return request(`/api/cars/${id}`);
   },
 
-  // ========= CARS (ADMIN) — REAL BACKEND =========
   async getAllCarsAdmin() {
-    return request("/cars");
+    return request("/api/cars");
   },
 
   async getDeletedCarsAdmin() {
-    return request("/cars/deleted");
+    return request("/api/cars/deleted");
   },
 
   async createCar(data: any) {
-    return request("/cars", {
+    return request("/api/cars", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
   async updateCar(id: string, data: any) {
-    return request(`/cars/${id}`, {
+    return request(`/api/cars/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
   async deleteCar(id: string) {
-    return request(`/cars/${id}`, {
+    return request(`/api/cars/${id}`, {
       method: "DELETE",
     });
   },
 
   async restoreCar(id: string) {
-    return request(`/cars/${id}/restore`, {
+    return request(`/api/cars/${id}/restore`, {
       method: "POST",
     });
   },
@@ -194,21 +190,20 @@ export const api = {
     save();
   },
 
-  // ========= BOOKINGS (BACKEND) =========
-
+  // ========= BOOKINGS =========
   async createBooking(data: {
     car_id: number;
     start_date: string;
     end_date: string;
   }): Promise<Booking> {
-    return request("/bookings", {
+    return request("/api/bookings", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
   async getUserBookings(): Promise<Booking[]> {
-    const rows = await request("/bookings/me");
+    const rows = await request("/api/bookings/me");
 
     return rows.map((b: any) => ({
       ...b,
@@ -222,7 +217,7 @@ export const api = {
   },
 
   async getAllBookings(): Promise<Booking[]> {
-    const rows = await request("/bookings");
+    const rows = await request("/api/bookings");
 
     return rows.map((b: any) => ({
       ...b,
@@ -243,15 +238,15 @@ export const api = {
     id: number,
     status: BookingStatus,
   ): Promise<Booking> {
-    return request(`/bookings/${id}/status`, {
+    return request(`/api/bookings/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
   },
 
-  // ========= ADMIN STATS (MOCK) =========
+  // ========= ADMIN STATS =========
   async getAdminStats(): Promise<AdminStats> {
-    return request("/stats");
+    return request("/api/stats");
   },
 
   async getRevenueByMonth(): Promise<
@@ -308,14 +303,15 @@ export const api = {
       .forEach((b) => {
         const car = db.cars.find((c) => c.id === b.car_id);
         if (!car) return;
-        const key = b.car_id;
+        const key = String(b.car_id);
 
-        if (!map[key])
+        if (!map[key]) {
           map[key] = {
             name: `${car.brand} ${car.name}`,
             bookings: 0,
             revenue: 0,
           };
+        }
         map[key].bookings += 1;
         map[key].revenue += b.total_price;
       });
