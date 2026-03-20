@@ -8,7 +8,7 @@ const router = Router();
 router.get("/public", async (_req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM cars WHERE deleted_at IS NULL AND available = true ORDER BY id DESC"
+      "SELECT * FROM cars WHERE deleted_at IS NULL AND available = true ORDER BY created_at DESC"
     );
     res.json(result.rows);
   } catch (error) {
@@ -21,7 +21,7 @@ router.get("/public", async (_req, res) => {
 router.get("/deleted", async (_req, res) => {
   try {
     const cars = await pool.query(
-      "SELECT * FROM cars WHERE deleted_at IS NOT NULL ORDER BY id DESC"
+      "SELECT * FROM cars WHERE deleted_at IS NOT NULL ORDER BY created_at DESC"
     );
     res.json(cars.rows);
   } catch (error) {
@@ -33,14 +33,10 @@ router.get("/deleted", async (_req, res) => {
 // SINGLE CAR (for CarDetails page)
 router.get("/:id", async (req, res) => {
   try {
-    const id = Number(req.params.id);
-
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ message: "Invalid car id" });
-    }
+    const { id } = req.params;
 
     const result = await pool.query(
-      "SELECT * FROM cars WHERE id = $1 AND deleted_at IS NULL",
+      "SELECT * FROM cars WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
       [id]
     );
 
@@ -59,7 +55,7 @@ router.get("/:id", async (req, res) => {
 router.get("/", async (_req, res) => {
   try {
     const cars = await pool.query(
-      "SELECT * FROM cars WHERE deleted_at IS NULL ORDER BY id DESC"
+      "SELECT * FROM cars WHERE deleted_at IS NULL ORDER BY created_at DESC"
     );
     res.json(cars.rows);
   } catch (error) {
